@@ -42,28 +42,26 @@ GLfloat yaw = 0, pitch = 0;
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 bool zoom = false;
 
-
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
-
-
-float mixValue = 0.0;
-bool open = false;
-
 
 //deltaTime variables
 void updateDeltaTime();
 float timeSinceLastFrame;
 float deltaTime;
 
-
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-GLfloat fov = 45;
-
 bool keys[1024];
 
 void do_movement();
+
+
+
+//temp
+glm::vec3 lightDefaultPos(0.0f, 1.0f, 2.0f);
+glm::vec3 lightPos = lightDefaultPos;
+
+
+
+
 
 int main()
 {
@@ -75,6 +73,11 @@ int main()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+
+
+
+
+	glfwWindowHint(GLFW_SAMPLES, 4);
 
 	GLFWwindow* window = glfwCreateWindow(800,600, "LearnOpenGL", nullptr, nullptr);
 	if(window == nullptr)
@@ -97,7 +100,7 @@ int main()
 	
 
 
-
+	
 	timeSinceLastFrame = glfwGetTime();
 	
 	glewExperimental = GL_TRUE;
@@ -112,115 +115,69 @@ int main()
 
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	//Shader
-	Shader ourShader("shaders/vertexShader.vert", "shaders/fragmentShader.frag");
-
-
-	//Vertices
-	GLfloat vertices[] = {
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-	glm::vec3 cubePositions[] = {
-	  glm::vec3( 0.0f,  0.0f,  0.0f), 
-	  glm::vec3( 2.0f,  5.0f, -15.0f), 
-	  glm::vec3(-1.5f, -2.2f, -2.5f),  
-	  glm::vec3(-3.8f, -2.0f, -12.3f),  
-	  glm::vec3( 2.4f, -0.4f, -3.5f),  
-	  glm::vec3(-1.7f,  3.0f, -7.5f),  
-	  glm::vec3( 1.3f, -2.0f, -2.5f),  
-	  glm::vec3( 1.5f,  2.0f, -2.5f), 
-	  glm::vec3( 1.5f,  0.2f, -1.5f), 
-	  glm::vec3(-1.3f,  1.0f, -1.5f)  
-	};
-
-	
-
-	
-
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_MULTISAMPLE);
 
+	//Shaders
+	Shader lightingShader("shaders/vertexShader.vert", "shaders/fragmentShader.frag");
 
+	Shader lampShader("shaders/lampVertexShader.vert", "shaders/lampFragmentShader.frag");
+
+	//Vertices
+	GLfloat vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+     0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+    -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f, 
+
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+     0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+};
+
+	
 
 
 
 
 
 	//Texture
-
-	int imageWidth1, imageHeight1;
-	unsigned char* image1 = SOIL_load_image("res/container.jpg", &imageWidth1, &imageHeight1, 0, SOIL_LOAD_RGB);
-
-	int imageWidth2, imageHeight2;
-	unsigned char* image2 = SOIL_load_image("res/awesomeface1.png", &imageWidth2, &imageHeight2, 0, SOIL_LOAD_RGBA);
-
-	GLuint texture1, texture2;
-	glGenTextures(1, &texture1);
-	glGenTextures(1, &texture2);
-
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, imageWidth1, imageHeight1, 0, GL_RGB, GL_UNSIGNED_BYTE, image1);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	SOIL_free_image_data(image1);
-
-	glBindTexture(GL_TEXTURE_2D, texture2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth2, imageHeight2, 0, GL_RGBA, GL_UNSIGNED_BYTE, image2);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	SOIL_free_image_data(image2);
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	//Object
 	GLuint VBO, VAO;
@@ -232,21 +189,27 @@ int main()
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
 		//position attribute
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
 		glEnableVertexAttribArray(0);
 
-		//color attribute
-		//glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3* sizeof(GLfloat)));
-		//glEnableVertexAttribArray(1);
-
-		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3* sizeof(GLfloat)));
+		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*) (3 * sizeof(GLfloat)));
 		glEnableVertexAttribArray(1);
 
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
+
+	//light object
+	GLuint lightVAO;
+
+	glGenVertexArrays(1, &lightVAO);
+		glBindVertexArray(lightVAO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)0);
+		glEnableVertexAttribArray(0);
 	glBindVertexArray(0);
 
 
@@ -255,22 +218,25 @@ int main()
 
 	float elapsedTime = 0;
 
-
-
-
 	//Transformation
-	
-	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-	
 	view = camera.GetViewMatrix();
 
 	
 	projection = glm::perspective(glm::radians(camera.Fov), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
 	
-	GLuint modelLoc = glGetUniformLocation(ourShader.Program, "model");
-	GLuint viewLoc = glGetUniformLocation(ourShader.Program, "view");
-	GLuint projectionLoc = glGetUniformLocation(ourShader.Program, "projection");
+
+	GLint objectColorLoc = glGetUniformLocation(lightingShader.Program, "objectColor");
+	GLint lightColorLoc = glGetUniformLocation(lightingShader.Program, "lightColor");
+	GLint lightPosLoc = glGetUniformLocation(lightingShader.Program, "lightPos");
+	GLint viewPosLoc = glGetUniformLocation(lightingShader.Program, "viewPos");
+
+	GLuint modelLoc = glGetUniformLocation(lightingShader.Program, "model");
+	GLuint viewLoc = glGetUniformLocation(lightingShader.Program, "view");
+	GLuint projectionLoc = glGetUniformLocation(lightingShader.Program, "projection");
+
+	GLuint lampModelLoc = glGetUniformLocation(lampShader.Program, "model");
+	GLuint lampViewLoc = glGetUniformLocation(lampShader.Program, "view");
+	GLuint lampProjectionLoc = glGetUniformLocation(lampShader.Program, "projection");
 
 
 
@@ -279,58 +245,32 @@ int main()
 	{
 		updateDeltaTime();
 		elapsedTime += deltaTime;
-		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 		//Check and call events
 		glfwPollEvents();
 		do_movement();
 
 		//Rendering commands here
-		glClearColor(0.2f,0.3f,0.3f,1.0f);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Activate the shader
-		ourShader.Use();
 
 
-		//enable textures
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-		glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture1"), 0);
+		//#####################################
+		//#				UPDATING 			  #
+		//#####################################
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
-		glUniform1i(glGetUniformLocation(ourShader.Program, "ourTexture2"), 1);
-
-
-		//Set the mix value for the textures
-		if(open)
-		{
-			mixValue += deltaTime;
-		}
-		else
-		{
-			mixValue -= deltaTime;
-		}
-		if(mixValue >= 0.5)
-			mixValue = 0.5;
-		
-		if(mixValue <= 0)
-			mixValue = 0;
-
-
-		glUniform1f(glGetUniformLocation(ourShader.Program, "mixValue"), mixValue);
-
-		//transform matrices
 		glm::mat4 model;
-		model = glm::rotate(model, glm::radians(elapsedTime * 50.0f), glm::vec3(0.5,1.0,0.0));
-
-
-		//transform the object
 		glm::mat4 view;
 		view = camera.GetViewMatrix();
+		projection = glm::perspective(glm::radians(camera.Fov), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
 		
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+		//Animation
+
+		lightPos = glm::vec3(cos(glfwGetTime()), sin(glfwGetTime() * 1)/5, 0.0f) + lightDefaultPos;
+
+		
 
 
 
@@ -339,22 +279,35 @@ int main()
 		//#####################################
 
 
-
+		//Draw the object
 		glBindVertexArray(VAO);
-		for(GLuint i = 0; i < 10; i++)
-		{
-			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
-			GLfloat angle = 20.0f * i;
-			 if(i % 2 == 0)  // Every 3rd iteration (including the first) we set the angle using GLFW's time function.
-       			angle += glfwGetTime() * 25.0f;
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			lightingShader.Use();
+
+			glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
+			glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+			glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+			glUniform3f(viewPosLoc, camera.Position.x, camera.Position.y, camera.Position.z);
+
 			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-			//glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);		
+		glBindVertexArray(0);
+
+
+		//draw the lamp
+		glBindVertexArray(lightVAO);
+			model = glm::mat4();
+			model = glm::translate(model, lightPos);
+			model = glm::scale(model, glm::vec3(0.2f));
+			lampShader.Use();
+
+			glUniformMatrix4fv(lampModelLoc, 1, GL_FALSE, glm::value_ptr(model));
+			glUniformMatrix4fv(lampViewLoc, 1, GL_FALSE, glm::value_ptr(view));
+			glUniformMatrix4fv(lampProjectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-		
 		glBindVertexArray(0);
 
 		//Swap the buffers
@@ -373,23 +326,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	}
-
-	if(key == GLFW_KEY_UP && action == GLFW_PRESS)
-	{
-		if(mixValue == 0)
-		{
-			open = true;
-		}
-		
-	}
-
-	if(key == GLFW_KEY_DOWN && action == GLFW_PRESS)
-	{
-		if(mixValue == 0.5)
-		{
-			open = false;
-		}
 	}
 
 	if(action == GLFW_PRESS)
@@ -455,7 +391,7 @@ void do_movement()
 		camera.Fov = 15.0f;
 	else
 		camera.Fov = 45.0f;
-	projection = glm::perspective(glm::radians(camera.Fov), (GLfloat)SCREEN_WIDTH / (GLfloat)SCREEN_HEIGHT, 0.1f, 100.0f);
+	
 }
 
 
